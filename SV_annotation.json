@@ -1,0 +1,145 @@
+{
+    "SVTYPE": "SVTYPE",
+    "END": "END",
+    
+    "overlap": {
+        "AF_datasets": ["0.75", "FALSE"],
+        "custom_datasets": ["0.10", "FALSE"],
+        "genes": ["10e-9","FALSE"]
+    },
+
+    "AF_datasets": {
+        "GRCh38": {
+            "IMH": [
+                ["INS", "/well/gel/HICF2/ref/SV_annotations/GRCh38_20190404_IMH_INS_SV.sorted.bed", "5", "AF", "Float"],
+                ["DEL", "/well/gel/HICF2/ref/SV_annotations/GRCh38_20190404_IMH_DEL_SV.sorted.bed", "5", "AF", "Float"],
+                ["DUP", "/well/gel/HICF2/ref/SV_annotations/GRCh38_20190404_IMH_DUP_SV.sorted.bed", "5", "AF", "Float"],
+                ["INV", "/well/gel/HICF2/ref/SV_annotations/GRCh38_20190404_IMH_INV_SV.sorted.bed", "5", "AF", "Float"]
+            ],
+            "gnomAD": [
+                ["INS", "/well/gel/HICF2/ref/SV_annotations/GRCh38_gnomad_v2.1_sv.INS.bed", "4,5,6,7,8,9", "AF,AFR_AF,AMR_AF,EAS_AF,EUR_AF,OTH_AF", "Float"],
+                ["DEL", "/well/gel/HICF2/ref/SV_annotations/GRCh38_gnomad_v2.1_sv.DEL.bed", "4,5,6,7,8,9", "AF,AFR_AF,AMR_AF,EAS_AF,EUR_AF,OTH_AF", "Float"],
+                ["DUP", "/well/gel/HICF2/ref/SV_annotations/GRCh38_gnomad_v2.1_sv.DUP.bed", "4,5,6,7,8,9", "AF,AFR_AF,AMR_AF,EAS_AF,EUR_AF,OTH_AF", "Float"],
+                ["INV", "/well/gel/HICF2/ref/SV_annotations/GRCh38_gnomad_v2.1_sv.INV.bed", "4,5,6,7,8,9", "AF,AFR_AF,AMR_AF,EAS_AF,EUR_AF,OTH_AF", "Float"]
+            ],
+            "1000G": [
+                ["INS", "/well/gel/HICF2/ref/SV_annotations/GRCh38_1000G_phase3_SV.INS.bed", "4,5,6,7,8,9", "AF,AFR_AF,AMR_AF,EAS_AF,EUR_AF,SAS_AF", "Float"],
+                ["DEL", "/well/gel/HICF2/ref/SV_annotations/GRCh38_1000G_phase3_SV.DEL.bed", "4,5,6,7,8,9", "AF,AFR_AF,AMR_AF,EAS_AF,EUR_AF,SAS_AF", "Float"],
+                ["DUP", "/well/gel/HICF2/ref/SV_annotations/GRCh38_1000G_phase3_SV.DUP.bed", "4,5,6,7,8,9", "AF,AFR_AF,AMR_AF,EAS_AF,EUR_AF,SAS_AF", "Float"],
+                ["INV", "/well/gel/HICF2/ref/SV_annotations/GRCh38_1000G_phase3_SV.INV.bed", "4,5,6,7,8,9", "AF,AFR_AF,AMR_AF,EAS_AF,EUR_AF,SAS_AF", "Float"]
+            ]
+        },
+        "GRCh37": {
+            "IMH": [
+                ["INS", "/well/gel/HICF2/ref/SV_annotations/GRCh37_20190404_IMH_INS_SV.sorted.bed", "5", "AF", "Float"],
+                ["DEL", "/well/gel/HICF2/ref/SV_annotations/GRCh37_20190404_IMH_DEL_SV.sorted.bed", "5", "AF", "Float"],
+                ["DUP", "/well/gel/HICF2/ref/SV_annotations/GRCh37_20190404_IMH_DUP_SV.sorted.bed", "5", "AF", "Float"],
+                ["INV", "/well/gel/HICF2/ref/SV_annotations/GRCh37_20190404_IMH_INV_SV.sorted.bed", "5", "AF", "Float"]
+            ],
+            "gnomAD": [
+                ["INS", "/well/gel/HICF2/ref/SV_annotations/GRCh37_gnomad_v2.1_sv.INS.bed", "4,5,6,7,8,9", "AF,AFR_AF,AMR_AF,EAS_AF,EUR_AF,OTH_AF", "Float"],
+                ["DEL", "/well/gel/HICF2/ref/SV_annotations/GRCh37_gnomad_v2.1_sv.DEL.bed", "4,5,6,7,8,9", "AF,AFR_AF,AMR_AF,EAS_AF,EUR_AF,OTH_AF", "Float"],
+                ["DUP", "/well/gel/HICF2/ref/SV_annotations/GRCh37_gnomad_v2.1_sv.DUP.bed", "4,5,6,7,8,9", "AF,AFR_AF,AMR_AF,EAS_AF,EUR_AF,OTH_AF", "Float"],
+                ["INV", "/well/gel/HICF2/ref/SV_annotations/GRCh37_gnomad_v2.1_sv.INV.bed", "4,5,6,7,8,9", "AF,AFR_AF,AMR_AF,EAS_AF,EUR_AF,OTH_AF", "Float"]
+            ],
+            "1000G": [
+                ["INS", "/well/gel/HICF2/ref/SV_annotations/GRCh37_1000G_phase3_SV.INS.bed", "4,5,6,7,8,9", "AF,AFR_AF,AMR_AF,EAS_AF,EUR_AF,SAS_AF", "Float"],
+                ["DEL", "/well/gel/HICF2/ref/SV_annotations/GRCh37_1000G_phase3_SV.DEL.bed", "4,5,6,7,8,9", "AF,AFR_AF,AMR_AF,EAS_AF,EUR_AF,SAS_AF", "Float"],
+                ["DUP", "/well/gel/HICF2/ref/SV_annotations/GRCh37_1000G_phase3_SV.DUP.bed", "4,5,6,7,8,9", "AF,AFR_AF,AMR_AF,EAS_AF,EUR_AF,SAS_AF", "Float"],
+                ["INV", "/well/gel/HICF2/ref/SV_annotations/GRCh37_1000G_phase3_SV.INV.bed", "4,5,6,7,8,9", "AF,AFR_AF,AMR_AF,EAS_AF,EUR_AF,SAS_AF", "Float"]
+            ]
+        },
+        "hg19": {
+            "IMH": [
+                ["INS", "/well/gel/HICF2/ref/SV_annotations/hg19_20190404_IMH_INS_SV.sorted.bed", "5", "AF", "Float"],
+                ["DEL", "/well/gel/HICF2/ref/SV_annotations/hg19_20190404_IMH_DEL_SV.sorted.bed", "5", "AF", "Float"],
+                ["DUP", "/well/gel/HICF2/ref/SV_annotations/hg19_20190404_IMH_DUP_SV.sorted.bed", "5", "AF", "Float"],
+                ["INV", "/well/gel/HICF2/ref/SV_annotations/hg19_20190404_IMH_INV_SV.sorted.bed", "5", "AF", "Float"]
+            ],
+            "gnomAD": [
+                ["INS", "/well/gel/HICF2/ref/SV_annotations/hg19_gnomad_v2.1_sv.INS.bed", "4,5,6,7,8,9", "AF,AFR_AF,AMR_AF,EAS_AF,EUR_AF,OTH_AF", "Float"],
+                ["DEL", "/well/gel/HICF2/ref/SV_annotations/hg19_gnomad_v2.1_sv.DEL.bed", "4,5,6,7,8,9", "AF,AFR_AF,AMR_AF,EAS_AF,EUR_AF,OTH_AF", "Float"],
+                ["DUP", "/well/gel/HICF2/ref/SV_annotations/hg19_gnomad_v2.1_sv.DUP.bed", "4,5,6,7,8,9", "AF,AFR_AF,AMR_AF,EAS_AF,EUR_AF,OTH_AF", "Float"],
+                ["INV", "/well/gel/HICF2/ref/SV_annotations/hg19_gnomad_v2.1_sv.INV.bed", "4,5,6,7,8,9", "AF,AFR_AF,AMR_AF,EAS_AF,EUR_AF,OTH_AF", "Float"]
+            ],
+            "1000G": [
+                ["INS", "/well/gel/HICF2/ref/SV_annotations/hg19_1000G_phase3_SV.INS.bed", "4,5,6,7,8,9", "AF,AFR_AF,AMR_AF,EAS_AF,EUR_AF,SAS_AF", "Float"],
+                ["DEL", "/well/gel/HICF2/ref/SV_annotations/hg19_1000G_phase3_SV.DEL.bed", "4,5,6,7,8,9", "AF,AFR_AF,AMR_AF,EAS_AF,EUR_AF,SAS_AF", "Float"],
+                ["DUP", "/well/gel/HICF2/ref/SV_annotations/hg19_1000G_phase3_SV.DUP.bed", "4,5,6,7,8,9", "AF,AFR_AF,AMR_AF,EAS_AF,EUR_AF,SAS_AF", "Float"],
+                ["INV", "/well/gel/HICF2/ref/SV_annotations/hg19_1000G_phase3_SV.INV.bed", "4,5,6,7,8,9", "AF,AFR_AF,AMR_AF,EAS_AF,EUR_AF,SAS_AF", "Float"]
+            ]
+        }
+    },
+
+    "custom_datasets": {
+        "GRCh38": {
+            "Reg": [
+                ["INS", "/well/gel/HICF2/ref/SV_annotations/GRCh38_regulatory_regions.v2.0.clean.bed", "4", "id", "String"],
+                ["DEL", "/well/gel/HICF2/ref/SV_annotations/GRCh38_regulatory_regions.v2.0.clean.bed", "4", "id", "String"],
+                ["DUP", "/well/gel/HICF2/ref/SV_annotations/GRCh38_regulatory_regions.v2.0.clean.bed", "4", "id", "String"],
+                ["INV", "/well/gel/HICF2/ref/SV_annotations/GRCh38_regulatory_regions.v2.0.clean.bed", "4", "id", "String"]            
+            ]
+        },
+        "GRCh37": {
+            "Reg": [
+                ["INS", "/well/gel/HICF2/ref/SV_annotations/GRCh37_regulatory_regions.v2.0.clean.bed", "4", "id", "String"],
+                ["DEL", "/well/gel/HICF2/ref/SV_annotations/GRCh37_regulatory_regions.v2.0.clean.bed", "4", "id", "String"],
+                ["DUP", "/well/gel/HICF2/ref/SV_annotations/GRCh37_regulatory_regions.v2.0.clean.bed", "4", "id", "String"],
+                ["INV", "/well/gel/HICF2/ref/SV_annotations/GRCh37_regulatory_regions.v2.0.clean.bed", "4", "id", "String"]            
+            ]
+        },
+        "hg19": {
+            "Reg": [
+                ["INS", "/well/gel/HICF2/ref/SV_annotations/hg19_regulatory_regions.v2.0.clean.bed", "4", "id", "String"],
+                ["DEL", "/well/gel/HICF2/ref/SV_annotations/hg19_regulatory_regions.v2.0.clean.bed", "4", "id", "String"],
+                ["DUP", "/well/gel/HICF2/ref/SV_annotations/hg19_regulatory_regions.v2.0.clean.bed", "4", "id", "String"],
+                ["INV", "/well/gel/HICF2/ref/SV_annotations/hg19_regulatory_regions.v2.0.clean.bed", "4", "id", "String"]            
+            ]
+        }
+    },
+
+    "genes": {
+        "GRCh38": {
+            "gene": [
+                ["INS", "/well/gel/HICF2/ref/SV_annotations/GRCh38_gencode.basic_gene.bed", "4", "symbol", "String"],
+                ["DEL", "/well/gel/HICF2/ref/SV_annotations/GRCh38_gencode.basic_gene.bed", "4", "symbol", "String"],
+                ["DUP", "/well/gel/HICF2/ref/SV_annotations/GRCh38_gencode.basic_gene.bed", "4", "symbol", "String"],
+                ["INV", "/well/gel/HICF2/ref/SV_annotations/GRCh38_gencode.basic_gene.bed", "4", "symbol", "String"]            
+            ],
+            "CDS": [
+                ["INS", "/well/gel/HICF2/ref/SV_annotations/GRCh38_gencode.basic_CDS.bed", "4", "symbol", "String"],
+                ["DEL", "/well/gel/HICF2/ref/SV_annotations/GRCh38_gencode.basic_CDS.bed", "4", "symbol", "String"],
+                ["DUP", "/well/gel/HICF2/ref/SV_annotations/GRCh38_gencode.basic_CDS.bed", "4", "symbol", "String"],
+                ["INV", "/well/gel/HICF2/ref/SV_annotations/GRCh38_gencode.basic_CDS.bed", "4", "symbol", "String"]            
+            ]           
+        },
+        "GRCh37": {
+            "gene": [
+                ["INS", "/well/gel/HICF2/ref/SV_annotations/GRCh37_gencode.basic_gene.bed", "4", "symbol", "String"],
+                ["DEL", "/well/gel/HICF2/ref/SV_annotations/GRCh37_gencode.basic_gene.bed", "4", "symbol", "String"],
+                ["DUP", "/well/gel/HICF2/ref/SV_annotations/GRCh37_gencode.basic_gene.bed", "4", "symbol", "String"],
+                ["INV", "/well/gel/HICF2/ref/SV_annotations/GRCh37_gencode.basic_gene.bed", "4", "symbol", "String"]            
+            ],
+            "CDS": [
+                ["INS", "/well/gel/HICF2/ref/SV_annotations/GRCh37_gencode.basic_CDS.bed", "4", "symbol", "String"],
+                ["DEL", "/well/gel/HICF2/ref/SV_annotations/GRCh37_gencode.basic_CDS.bed", "4", "symbol", "String"],
+                ["DUP", "/well/gel/HICF2/ref/SV_annotations/GRCh37_gencode.basic_CDS.bed", "4", "symbol", "String"],
+                ["INV", "/well/gel/HICF2/ref/SV_annotations/GRCh37_gencode.basic_CDS.bed", "4", "symbol", "String"]            
+            ]             
+        },
+        "hg19": {
+            "gene": [
+                ["INS", "/well/gel/HICF2/ref/SV_annotations/hg19_gencode.basic_gene.bed", "4", "symbol", "String"],
+                ["DEL", "/well/gel/HICF2/ref/SV_annotations/hg19_gencode.basic_gene.bed", "4", "symbol", "String"],
+                ["DUP", "/well/gel/HICF2/ref/SV_annotations/hg19_gencode.basic_gene.bed", "4", "symbol", "String"],
+                ["INV", "/well/gel/HICF2/ref/SV_annotations/hg19_gencode.basic_gene.bed", "4", "symbol", "String"]            
+            ],
+            "CDS": [
+                ["INS", "/well/gel/HICF2/ref/SV_annotations/hg19_gencode.basic_CDS.bed", "4", "symbol", "String"],
+                ["DEL", "/well/gel/HICF2/ref/SV_annotations/hg19_gencode.basic_CDS.bed", "4", "symbol", "String"],
+                ["DUP", "/well/gel/HICF2/ref/SV_annotations/hg19_gencode.basic_CDS.bed", "4", "symbol", "String"],
+                ["INV", "/well/gel/HICF2/ref/SV_annotations/hg19_gencode.basic_CDS.bed", "4", "symbol", "String"]            
+            ]  
+        }
+    }
+}
