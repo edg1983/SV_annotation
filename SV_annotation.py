@@ -5,6 +5,10 @@ Can add gene based annotations as well using a GFF file
 
 Author: Edoardo Giacopuzzi
 Email: edoardo.giacopuzzi@well.ox.ac.uk
+
+Each variant type is annotated only from the corresponding type
+INS:ME / DEL:ME are annotated with data from INS / DEL
+BND annotated by making a flanking region defined in config
 '''
 
 import json
@@ -22,11 +26,14 @@ from cyvcf2 import VCF, Writer
 #from pyCore.Core import get_stdout, tokenize
 #from pyCore.VCFtools import INFO
 
+
+VERSION = "0.1"
 COL_OPERATIONS = {
     'String': 'unique',
     'Float': 'max',
     'Integer': 'max'
 }
+SV_TYPES = ['DEL','DUP','INS','INV','BND']
 
 class INFO():
 	def __init__(self, info_field):
@@ -123,6 +130,47 @@ def readFileConfig(file_config):
     data_types = file_config[4]
     return group,b_file,cols_idx,fields,data_types
 
+def prepare_tmp_files(vcf_file,sv_types,bnd_padding,tmp_folder):
+    tmp_files = {}
+    out = {}
+    for t in sv_types:
+        tmp_files[t] = tmp_folder + "/SVannot.tmp_" + t + ".bed"
+        out[t] = open(tmp_files[t], "a")
+    
+    skipped = 0
+    counts = {t:0 for t in sv_types}
+
+    vcf = VCF(input_file)
+    for v in vcf:
+        svtype = v.INFO.get(config['SVTYPE'])
+        alt = v.ALT[0]
+        for t in sv_types:
+            if svtype == t or re.match(t,alt): 
+                svtype = t
+        if svtype in ['BND', 'INS']:
+            start = int(v.POS) - bnd_padding
+            stop = int(v.POS) + bnd_padding
+        else:
+            start = v.POS
+            stop = v.INFO.get(config['END'])
+        
+        try:
+            out[svtype].write("{chrom}\t{start}\t{stop}\t{ID}\n".format(chrom=v.CHROM,start=start,stop=stop,ID=v.ID))
+            counts[svtype] += 1
+        except:
+            skipped += 1
+
+    return(tmp_files, counts, skipped)
+
+def checkFiles(files):
+    not_found = []
+    success = True
+    for f in files:
+        if not os.path.isfile(f):
+            not_found.append(f)
+            success = False
+    return (success, not_found)
+
 #arguments
 parser = argparse.ArgumentParser(description='Script to add annotSV annotations to VCF file')
 parser.add_argument("-i", "--inputvcf", help="Input VCF file to be annotated", action="store", required=True)
@@ -132,6 +180,9 @@ parser.add_argument("-b", "--build", help="Genome build", action="store", choice
 parser.add_argument("-s", "--config", help="Config file (json)", action="store", required=True)
 parser.add_argument("-r", "--remove_tmp", help="Set to remove tmp files", action="store_true", required=False)
 args = parser.parse_args()
+
+#Startup message
+print("### SV annotation", VERSION, " ###")
 
 #Initial configuration
 input_file = args.inputvcf
@@ -144,32 +195,17 @@ bedtools = ['bedtools','intersect','-wa','-wb']
 with open(json_file) as json_config:
     config = json.load(json_config)
 
-tmp_files = {}
-tmp_files['INS'] = tmp_folder + "/SVannot.tmp_INS.bed"
-tmp_files['DEL'] = tmp_folder + "/SVannot.tmp_DEL.bed"
-tmp_files['DUP'] = tmp_folder + "/SVannot.tmp_DUP.bed"
-tmp_files['INV'] = tmp_folder + "/SVannot.tmp_INV.bed"
+#Check all files from config exists
+input_files = [input_file]
+for g in ['AF_datasets','custom_datasets','genes']:
+    for v in config[g][build].values():
+        for f in v: input_files.append(f[1])
+success, not_found = checkFiles(input_files)
+if not success:
+    sys.exit("ERROR. Following input files not found: " + ";".join(not_found))
 
 #Read input VCF and create temp bed files
-vcf = VCF(input_file)
-skipped = 0
-out = {}
-counts = {'INS': 0, 'DEL': 0, 'DUP': 0, 'INV': 0}
-
-out['INS'] = open(tmp_files['INS'], "w+")
-out['DEL'] = open(tmp_files['DEL'], "w+")
-out['DUP'] = open(tmp_files['DUP'], "w+")
-out['INV'] = open(tmp_files['INV'], "w+")
-for v in vcf:
-    try:
-        out[v.INFO.get(config['SVTYPE'])].write("{chrom}\t{start}\t{stop}\t{ID}\n".format(chrom=v.CHROM,start=v.POS,stop=v.INFO.get(config['END']),ID=v.ID))
-        counts[v.INFO.get(config['SVTYPE'])] += 1
-    except:
-        skipped += 1
-out['INS'].close()
-out['DEL'].close()
-out['DUP'].close()
-out['INV'].close()
+tmp_files, counts, skipped = prepare_tmp_files(input_file, SV_TYPES, config['bnd_padding'], tmp_folder)
 for key, value in counts.items(): print(key, ": ", value)
 print("Skipped vars: ", skipped)
 
@@ -180,14 +216,19 @@ tags_dataTypes = {}
 print("Processing AF datasets")
 print("Overlap: ", config['overlap']['AF_datasets'][0])
 print("Reciprocal: ", config['overlap']['AF_datasets'][1])
-overlap = ['-f', config['overlap']['AF_datasets'][0]]
-reciprocal = reciprocalOpt(config['overlap']['AF_datasets'][1]) 
 
 for dataset, items in config['AF_datasets'][build].items():
     print(dataset)
     for file_config in items:
         group,b_file,cols_idx,fields,data_types = readFileConfig(file_config)
         a_file = tmp_files[group]
+        if group in ['BND', 'INS']:
+            overlap = []
+            reciprocal = []
+        else:      
+            overlap = ['-f', config['overlap']['AF_datasets'][0]]
+            reciprocal = reciprocalOpt(config['overlap']['AF_datasets'][1]) 
+
         print ("\t", group, ": ", b_file)
 
         annotations.append(computeOverlap(dataset,group,a_file,b_file,overlap,reciprocal,cols_idx,fields,tmp_folder))
@@ -196,48 +237,52 @@ for dataset, items in config['AF_datasets'][build].items():
 print("Processing custom datasets")
 print("Overlap: ", config['overlap']['custom_datasets'][0])
 print("Reciprocal: ", config['overlap']['custom_datasets'][1])
-overlap = ['-F', config['overlap']['custom_datasets'][0]]
-reciprocal = reciprocalOpt(config['overlap']['custom_datasets'][1]) 
-
+ 
 for dataset, items in config['custom_datasets'][build].items():
     print(dataset)
     for file_config in items:
         group,b_file,cols_idx,fields,data_types = readFileConfig(file_config)
         a_file = tmp_files[group]
+        if group in ['BND', 'INS']:
+            overlap = []
+            reciprocal = []
+        else:   
+            overlap = ['-F', config['overlap']['custom_datasets'][0]]
+            reciprocal = reciprocalOpt(config['overlap']['custom_datasets'][1])
+
         print ("\t", group, ": ", b_file)
 
         annotations.append(computeOverlap(dataset,group,a_file,b_file,overlap,reciprocal,cols_idx,fields,tmp_folder))
         tags_dataTypes.update(setDataType(dataset,fields,data_types))
 
-full_annots = pd.concat(annotations, axis=0, join='outer', sort=False)
-full_annots.fillna(0, inplace=True)
-
-col_operations = {}
-for col in full_annots.columns:
-    col_operations[col] = COL_OPERATIONS[tags_dataTypes[col]]
-
-full_annots = full_annots.groupby('ID').agg(col_operations)
-full_annots.index = full_annots.index.map(str)
-
 print("Processing genes datasets")
 print("Overlap: ", config['overlap']['genes'][0])
 print("Reciprocal: ", config['overlap']['genes'][1])
-overlap = ['-F', config['overlap']['genes'][0]]
-reciprocal = reciprocalOpt(config['overlap']['genes'][1]) 
+
 
 for dataset, items in config['genes'][build].items():
     print(dataset)
     for file_config in items:
         group,b_file,cols_idx,fields,data_types = readFileConfig(file_config)
         a_file = tmp_files[group]
+        if group in ['BND', 'INS']:
+            overlap = []
+            reciprocal = []
+        else:  
+            overlap = ['-F', config['overlap']['genes'][0]]
+            reciprocal = reciprocalOpt(config['overlap']['genes'][1]) 
+        
         print ("\t", group, ": ", b_file)
 
         annotations.append(computeOverlap(dataset,group,a_file,b_file,overlap,reciprocal,cols_idx,fields,tmp_folder))
         tags_dataTypes.update(setDataType(dataset,fields,data_types))
 
+#Concatenate all annotations in a single df and replace NA with 0
 full_annots = pd.concat(annotations, axis=0, join='outer', sort=False)
 full_annots.fillna(0, inplace=True)
 
+#Perform operations on columns to generate a unique annotation per variant
+#Currently this annotate max AF and unique distinct genes
 col_operations = {}
 for col in full_annots.columns:
     col_operations[col] = COL_OPERATIONS[tags_dataTypes[col]]
