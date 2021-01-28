@@ -27,7 +27,7 @@ from cyvcf2 import VCF, Writer
 #from pyCore.VCFtools import INFO
 
 
-VERSION = "0.1"
+VERSION = "0.2"
 COL_OPERATIONS = {
     'String': 'unique',
     'Float': 'max',
@@ -130,7 +130,7 @@ def readFileConfig(file_config):
     data_types = file_config[4]
     return group,b_file,cols_idx,fields,data_types
 
-def prepare_tmp_files(vcf_file,sv_types,bnd_padding,tmp_folder):
+def prepare_tmp_files(vcf_file,sv_types,cipos,default_pad,tmp_folder):
     tmp_files = {}
     out = {}
     for t in sv_types:
@@ -144,12 +144,27 @@ def prepare_tmp_files(vcf_file,sv_types,bnd_padding,tmp_folder):
     for v in vcf:
         svtype = v.INFO.get(config['SVTYPE'])
         alt = v.ALT[0]
+        if cipos:
+            cipos_value = v.INFO.get(config['CIPOS'])
+            if cipos_value:
+                if isinstance(cipos_value, str): 
+                    cipos_value = cipos_value.split(",")
+                if len(cipos_value) == 2:
+                    minus_pad = abs(int(cipos_value[0]))
+                    plus_pad = abs(int(cipos_value[1]))
+                else:
+                    plus_pad = minus_pad = default_pad
+            else:
+                plus_pad = minus_pad = default_pad
+        else:
+            plus_pad = minus_pad = default_pad 
+        
         for t in sv_types:
             if svtype == t or re.match(t,alt): 
                 svtype = t
         if svtype in ['BND', 'INS']:
-            start = int(v.POS) - bnd_padding
-            stop = int(v.POS) + bnd_padding
+            start = int(v.POS) - minus_pad
+            stop = int(v.POS) + plus_pad
         else:
             start = v.POS
             stop = v.INFO.get(config['END'])
@@ -189,11 +204,20 @@ input_file = args.inputvcf
 build = args.build
 json_file = args.config
 tmp_folder = args.tmpdir
+os.makedirs(tmp_folder, exist_ok=True)
 
 bedtools = ['bedtools','intersect','-wa','-wb']
 
 with open(json_file) as json_config:
     config = json.load(json_config)
+
+#If resource_folder is defined, this path is added to all files
+resource_folder = config.get('resource_folder', False)
+if resource_folder:
+    for section in ['AF_datasets','custom_datasets','genes']:
+        for dataset in config[section][build].keys():
+            for i in range(len(config[section][build][dataset])): 
+                config[section][build][dataset][i][1] = resource_folder + "/" + config[section][build][dataset][i][1]
 
 #Check all files from config exists
 input_files = [input_file]
@@ -205,7 +229,7 @@ if not success:
     sys.exit("ERROR. Following input files not found: " + ";".join(not_found))
 
 #Read input VCF and create temp bed files
-tmp_files, counts, skipped = prepare_tmp_files(input_file, SV_TYPES, config['bnd_padding'], tmp_folder)
+tmp_files, counts, skipped = prepare_tmp_files(input_file, SV_TYPES, config.get('CIPOS', None),config.get('padding',10),tmp_folder)
 for key, value in counts.items(): print(key, ": ", value)
 print("Skipped vars: ", skipped)
 
@@ -317,6 +341,7 @@ nline = 0
 annotated = 0
 skipped = 0
 while line:
+    new_annotation_added = False
     nline += 1
     print("Variant ",nline, end="\r")
     line = tokenize(line,"\t")
@@ -328,25 +353,27 @@ while line:
             if isinstance(newannot, (float, int)):
                 newannot = str(round(newannot,4))
                 infos.addINFO(col, newannot)
-                annotated += 1
+                new_annotation_added = True
             else:
                 newannot = [str(x) for x in newannot if x != 0]
                 if len(newannot) > 0:
                     newannot = ",".join(newannot)
                     infos.addINFO(col, newannot)
-                    annotated += 1
+                    new_annotation_added = True
             newline = line[0:7]
             newline.append(infos.getINFO("string"))
             newline.extend(line[8:])   
         except:
-            skipped += 1
             newline = line
-            
+    if new_annotation_added:
+        annotated += 1
+    else:
+        skipped += 1
     outfile.write("\t".join(newline) + "\n")
     line = vcf.readline()
 
 outfile.close()
-print("\nVariants annotated: ",annotated, "; skipped: ", skipped)
+print("\nVariants annotated: ",annotated, "; not annotated: ", skipped)
 
 if args.remove_tmp:
     print("Removing temp files")
