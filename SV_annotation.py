@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 '''
 SV annotation
 Take a SV VCF and annotate it using fields from other VCF or BED files
