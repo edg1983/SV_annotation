@@ -76,6 +76,17 @@
         }
     },
 
+    "coverage_datasets": {
+        "GRCh38": {
+            "LCR": [
+                ["DEL", "GRCh38_IMH.DEL.bed"],
+                ["DUP", "GRCh38_IMH.DUP.bed"],
+                ["INV", "GRCh38_IMH.INV.bed"],
+                ["BND", "GRCh38_IMH.BND.bed"]
+            ],
+        }
+    },
+
     "custom_datasets": {
         "GRCh38": {
             "Reg": [

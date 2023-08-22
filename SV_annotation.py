@@ -36,6 +36,8 @@ COL_OPERATIONS = {
     'Integer': 'max'
 }
 SV_TYPES = ['DEL','DUP','INS','INV','BND']
+bedtools = ['bedtools','intersect','-wa','-wb']
+coverage = ['bedtools','coverage']
 
 class INFO():
 	def __init__(self, info_field):
@@ -79,6 +81,10 @@ class INFO():
 				output.append(key + "=" + str(value))
 		return ';'.join(output)
 
+def log(message, level = "INFO"):
+    timestring = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"[{timestring}] - {level} - {message}", file=sys.stderr)
+
 def get_stdout(cmd, shell=False):
 	proc = subprocess.Popen(cmd, shell=shell,
 		stdout = subprocess.PIPE,
@@ -114,6 +120,23 @@ def computeOverlap(dataset, group, a_file, b_file, overlap, reciprocal, cols_idx
     mydf = pd.read_csv(filename, sep="\t", index_col="ID")
     return mydf
 
+def computeCoverage(dataset, group, a_file, b_file, tmp_dir):
+    filename = tmp_dir + "/SVannot.tmp_cov_" + dataset + "_" + group
+    out_file = open(filename, "w+")
+    header = ['ID'] + [dataset + "_overlap"]
+    out_file.write("\t".join(header) + "\n")
+    cols_idx = [3, 7]
+    
+    log(f"Coverage command: {coverage + ['-a',a_file,'-b',b_file]}")
+
+    for line in get_stdout(coverage + ['-a',a_file,'-b',b_file]):
+        line = tokenize(line, "\t")
+        out_file.write("\t".join([line[i] for i in cols_idx]) + "\n")  
+    out_file.close()    
+
+    mydf = pd.read_csv(filename, sep="\t", index_col="ID")
+    return mydf
+
 def setDataType(dataset, fields, data_types):
     tags = [dataset + "_" + x for x in fields.split(",")]
     data_types = data_types.split(",")
@@ -127,22 +150,24 @@ def setDataType(dataset, fields, data_types):
 def readFileConfig(file_config):
     group = file_config[0]
     b_file = file_config[1]
-    cols_idx = file_config[2]
-    fields = file_config[3]
-    data_types = file_config[4]
+    cols_idx = file_config[2] if len(file_config) > 2 else None
+    fields = file_config[3] if len(file_config) > 3 else None
+    data_types = file_config[4] if len(file_config) > 4 else None
     return group,b_file,cols_idx,fields,data_types
 
 def prepare_tmp_files(vcf_file,sv_types,cipos,default_pad,tmp_folder):
     tmp_files = {}
     out = {}
+    pads = {}
     for t in sv_types:
         tmp_files[t] = tmp_folder + "/SVannot.tmp_" + t + ".bed"
         out[t] = open(tmp_files[t], "a")
+        pads[t] = {'minus': 0, 'plus': 0}
     
     skipped = 0
     counts = {t:0 for t in sv_types}
 
-    vcf = VCF(input_file)
+    vcf = VCF(vcf_file)
     for v in vcf:
         svtype = v.INFO.get(config['SVTYPE'])
         alt = v.ALT[0]
@@ -152,25 +177,22 @@ def prepare_tmp_files(vcf_file,sv_types,cipos,default_pad,tmp_folder):
                 if isinstance(cipos_value, str): 
                     cipos_value = cipos_value.split(",")
                 if len(cipos_value) == 2:
-                    minus_pad = abs(int(cipos_value[0]))
-                    plus_pad = abs(int(cipos_value[1]))
+                    for t in sv_types: pads[t]['minus'] = abs(int(cipos_value[0]))
+                    for t in sv_types: pads[t]['plus'] == abs(int(cipos_value[1]))
                 else:
-                    plus_pad = minus_pad = default_pad
+                    pads['INS']['minus'] = pads['INS']['plus'] = pads['BND']['minus'] = pads['BND']['minus'] = default_pad
             else:
-                plus_pad = minus_pad = default_pad
+                pads['INS']['minus'] = pads['INS']['plus'] = pads['BND']['minus'] = pads['BND']['minus'] = default_pad
         else:
-            plus_pad = minus_pad = default_pad 
+            pads['INS']['minus'] = pads['INS']['plus'] = pads['BND']['minus'] = pads['BND']['minus'] = default_pad
         
         for t in sv_types:
             if svtype == t or re.match(t,alt): 
                 svtype = t
-        if svtype in ['BND', 'INS']:
-            start = int(v.POS) - minus_pad
-            stop = int(v.POS) + plus_pad
-        else:
-            start = v.POS
-            stop = v.INFO.get(config['END'])
-        
+
+        start = int(v.POS) - pads[svtype]['minus']
+        stop = int(v.POS) + pads[svtype]['plus']
+
         try:
             out[svtype].write("{chrom}\t{start}\t{stop}\t{ID}\n".format(chrom=v.CHROM,start=start,stop=stop,ID=v.ID))
             counts[svtype] += 1
@@ -191,7 +213,7 @@ def checkFiles(files):
 #arguments
 parser = argparse.ArgumentParser(description='Script to add annotSV annotations to VCF file')
 parser.add_argument("-i", "--inputvcf", help="Input VCF file to be annotated", action="store", required=True)
-parser.add_argument("-o", "--out", help="Output VCF file", action="store", required=True)
+parser.add_argument("-o", "--out", help="Output VCF file", action="store", required=False, default="stdout")
 parser.add_argument("-t", "--tmpdir", help="Folder to store temp files", action="store", required=False, default=tempfile.gettempdir())
 parser.add_argument("-b", "--build", help="Genome build", action="store", choices=["GRCh37", "GRCh38"], required=True)
 parser.add_argument("-s", "--config", help="Config file (json)", action="store", required=True)
@@ -199,7 +221,7 @@ parser.add_argument("-r", "--remove_tmp", help="Set to remove tmp files", action
 args = parser.parse_args()
 
 #Startup message
-print("### SV annotation", VERSION, " ###")
+log(f"### SV annotation {VERSION} ###")
 
 #Initial configuration
 input_file = args.inputvcf
@@ -208,7 +230,12 @@ json_file = args.config
 tmp_folder = args.tmpdir
 os.makedirs(tmp_folder, exist_ok=True)
 
-bedtools = ['bedtools','intersect','-wa','-wb']
+if args.out == "-":
+    log("Writing output to stdout")
+    outfile = sys.stdout
+else:
+    log(f"Writing output to {args.out}")
+    outfile = open(args.out, "w")
 
 with open(json_file) as json_config:
     config = json.load(json_config)
@@ -216,14 +243,14 @@ with open(json_file) as json_config:
 #If resource_folder is defined, this path is added to all files
 resource_folder = config.get('resource_folder', False)
 if resource_folder:
-    for section in ['AF_datasets','custom_datasets','genes']:
+    for section in ['AF_datasets','custom_datasets','genes','coverage_datasets']:
         for dataset in config[section][build].keys():
             for i in range(len(config[section][build][dataset])): 
                 config[section][build][dataset][i][1] = resource_folder + "/" + config[section][build][dataset][i][1]
 
 #Check all files from config exists
 input_files = [input_file]
-for g in ['AF_datasets','custom_datasets','genes']:
+for g in ['AF_datasets','custom_datasets','genes','coverage_datasets']:
     for v in config[g][build].values():
         for f in v: input_files.append(f[1])
 success, not_found = checkFiles(input_files)
@@ -231,20 +258,21 @@ if not success:
     sys.exit("ERROR. Following input files not found: " + ";".join(not_found))
 
 #Read input VCF and create temp bed files
+log("Prepare intervals from input VCF")
 tmp_files, counts, skipped = prepare_tmp_files(input_file, SV_TYPES, config.get('CIPOS', None),config.get('padding',10),tmp_folder)
-for key, value in counts.items(): print(key, ": ", value)
-print("Skipped vars: ", skipped)
+for key, value in counts.items(): log(f"{key}: {value}")
+log(f"Skipped vars: {skipped}")
 
 #Run bedtools intersect on the single datasets
 annotations = []
 tags_dataTypes = {}
 
-print("Processing AF datasets")
-print("Overlap: ", config['overlap']['AF_datasets'][0])
-print("Reciprocal: ", config['overlap']['AF_datasets'][1])
+log("Processing AF datasets")
+log(f"Overlap: {config['overlap']['AF_datasets'][0]}")
+log(f"Reciprocal: {config['overlap']['AF_datasets'][1]}")
 
 for dataset, items in config['AF_datasets'][build].items():
-    print(dataset)
+    log(dataset)
     for file_config in items:
         group,b_file,cols_idx,fields,data_types = readFileConfig(file_config)
         a_file = tmp_files[group]
@@ -255,17 +283,28 @@ for dataset, items in config['AF_datasets'][build].items():
             overlap = ['-f', config['overlap']['AF_datasets'][0]]
             reciprocal = reciprocalOpt(config['overlap']['AF_datasets'][1]) 
 
-        print ("\t", group, ": ", b_file)
+        log (f"{group}: {b_file}")
 
         annotations.append(computeOverlap(dataset,group,a_file,b_file,overlap,reciprocal,cols_idx,fields,tmp_folder))
         tags_dataTypes.update(setDataType(dataset,fields,data_types))
 
-print("Processing custom datasets")
-print("Overlap: ", config['overlap']['custom_datasets'][0])
-print("Reciprocal: ", config['overlap']['custom_datasets'][1])
+log("Processing coverage datasets")
+for dataset, items in config['coverage_datasets'][build].items():
+    log(dataset)
+    for file_config in items:
+        group,b_file,cols_idx,fields,data_types = readFileConfig(file_config)
+        a_file = tmp_files[group]
+        log (f"{group}: {b_file}")
+
+        annotations.append(computeCoverage(dataset,group,a_file,b_file,tmp_folder))
+        tags_dataTypes.update(setDataType(dataset,"overlap","Float"))
+
+log("Processing custom datasets")
+log(f"Overlap: {config['overlap']['custom_datasets'][0]}")
+log(f"Reciprocal: {config['overlap']['custom_datasets'][1]}")
  
 for dataset, items in config['custom_datasets'][build].items():
-    print(dataset)
+    log(dataset)
     for file_config in items:
         group,b_file,cols_idx,fields,data_types = readFileConfig(file_config)
         a_file = tmp_files[group]
@@ -276,18 +315,18 @@ for dataset, items in config['custom_datasets'][build].items():
             overlap = ['-F', config['overlap']['custom_datasets'][0]]
             reciprocal = reciprocalOpt(config['overlap']['custom_datasets'][1])
 
-        print ("\t", group, ": ", b_file)
+        log (f"{group}: {b_file}")
 
         annotations.append(computeOverlap(dataset,group,a_file,b_file,overlap,reciprocal,cols_idx,fields,tmp_folder))
         tags_dataTypes.update(setDataType(dataset,fields,data_types))
 
-print("Processing genes datasets")
-print("Overlap: ", config['overlap']['genes'][0])
-print("Reciprocal: ", config['overlap']['genes'][1])
+log("Processing genes datasets")
+log(f"Overlap: {config['overlap']['genes'][0]}")
+log(f"Reciprocal: {config['overlap']['genes'][1]}")
 
 
 for dataset, items in config['genes'][build].items():
-    print(dataset)
+    log(dataset)
     for file_config in items:
         group,b_file,cols_idx,fields,data_types = readFileConfig(file_config)
         a_file = tmp_files[group]
@@ -298,27 +337,35 @@ for dataset, items in config['genes'][build].items():
             overlap = ['-F', config['overlap']['genes'][0]]
             reciprocal = reciprocalOpt(config['overlap']['genes'][1]) 
         
-        print ("\t", group, ": ", b_file)
+        log (f"{group}: {b_file}")
 
         annotations.append(computeOverlap(dataset,group,a_file,b_file,overlap,reciprocal,cols_idx,fields,tmp_folder))
         tags_dataTypes.update(setDataType(dataset,fields,data_types))
 
 #Concatenate all annotations in a single df and replace NA with 0
+log("Concatenating annotations...")
 full_annots = pd.concat(annotations, axis=0, join='outer', sort=False)
 full_annots.fillna(0, inplace=True)
 
+log("Full annotations shape: ", full_annots.shape)
+log("==== Annotations extract ====")
+print(full_annots.head(), file=sys.stderr)
+log("=============================")
+
 #Perform operations on columns to generate a unique annotation per variant
 #Currently this annotate max AF and unique distinct genes
+log("Collpasing annotations...")
 col_operations = {}
 for col in full_annots.columns:
     col_operations[col] = COL_OPERATIONS[tags_dataTypes[col]]
+
+log(f"Columns operations: {col_operations}")
 
 full_annots = full_annots.groupby('ID').agg(col_operations)
 full_annots.index = full_annots.index.map(str)
 
 #Add the annotations and write new VCF
-print("Adding annotations to VCF...")
-outfile = open(args.out, "w")
+log("Adding annotations to VCF...")
 if args.inputvcf.endswith("vcf.gz"):
     vcf = gzip.open(args.inputvcf,"rt")
 elif args.inputvcf.endswith("vcf"):
@@ -345,7 +392,7 @@ skipped = 0
 while line:
     new_annotation_added = False
     nline += 1
-    print("Variant ",nline, end="\r")
+    print("Variant ",nline, end="\r", file=sys.stderr)
     line = tokenize(line,"\t")
     ID = line[2]
     infos = INFO(line[7])
@@ -375,13 +422,14 @@ while line:
     line = vcf.readline()
 
 outfile.close()
-print("\nVariants annotated: ",annotated, "; not annotated: ", skipped)
+print("", file=sys.stderr)
+log(f"Variants annotated: {annotated}; not annotated: {skipped}")
 
 if args.remove_tmp:
-    print("Removing temp files")
+    log("Removing temp files")
     tmp_files = os.listdir(tmp_folder)
     for myfile in tmp_files:
         if myfile.startswith('SVannot.tmp_'):
             os.remove(tmp_folder + "/" + myfile)
 
-print("Annotations done!")
+log("Annotations done!")
