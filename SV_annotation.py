@@ -347,22 +347,20 @@ log("Concatenating annotations...")
 full_annots = pd.concat(annotations, axis=0, join='outer', sort=False)
 full_annots.fillna(0, inplace=True)
 
-log("Full annotations shape: ", full_annots.shape)
-log("==== Annotations extract ====")
-print(full_annots.head(), file=sys.stderr)
-log("=============================")
-
 #Perform operations on columns to generate a unique annotation per variant
 #Currently this annotate max AF and unique distinct genes
-log("Collpasing annotations...")
+log("Collapsing annotations...")
 col_operations = {}
 for col in full_annots.columns:
     col_operations[col] = COL_OPERATIONS[tags_dataTypes[col]]
 
 log(f"Columns operations: {col_operations}")
-
 full_annots = full_annots.groupby('ID').agg(col_operations)
 full_annots.index = full_annots.index.map(str)
+
+log("==== Annotations extract ====")
+print(full_annots.head(), file=sys.stderr)
+log("=============================")
 
 #Add the annotations and write new VCF
 log("Adding annotations to VCF...")
