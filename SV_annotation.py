@@ -390,7 +390,8 @@ skipped = 0
 while line:
     new_annotation_added = False
     nline += 1
-    print("Variant ",nline, end="\r", file=sys.stderr)
+    if nline % 10000 == 0: 
+        log(f"{nline} variants annotated")
     line = tokenize(line,"\t")
     ID = line[2]
     infos = INFO(line[7])
