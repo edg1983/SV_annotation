@@ -79,11 +79,20 @@
     "coverage_datasets": {
         "GRCh38": {
             "LCR": [
-                ["DEL", "GRCh38_IMH.DEL.bed"],
-                ["DUP", "GRCh38_IMH.DUP.bed"],
-                ["INV", "GRCh38_IMH.INV.bed"],
-                ["BND", "GRCh38_IMH.BND.bed"]
-            ],
+                ["DEL", "GRCh38_ExclusionRegions.bed"],
+                ["DUP", "GRCh38_ExclusionRegions.bed"],
+                ["INV", "GRCh38_ExclusionRegions.bed"],
+                ["BND", "GRCh38_ExclusionRegions.bed"]
+            ]
+        },
+
+        "GRCh37": {
+            "LCR": [
+                ["DEL", "GRCh37_ExclusionRegions.bed"],
+                ["DUP", "GRCh37_ExclusionRegions.bed"],
+                ["INV", "GRCh37_ExclusionRegions.bed"],
+                ["BND", "GRCh37_ExclusionRegions.bed"]
+            ]
         }
     },
 
